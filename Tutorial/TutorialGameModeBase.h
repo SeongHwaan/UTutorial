@@ -13,11 +13,10 @@ UCLASS()
 class TUTORIAL_API ATutorialGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
-	
-public:
 
 	ATutorialGameModeBase();
 
-	virtual void PostLogin(ATutorialPlayerController* NewPlayer);
-
+public:
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 };
+

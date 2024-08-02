@@ -9,7 +9,6 @@ AFountain::AFountain()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	//UStaticMeshComponent는 instance에 대한 것. UStaticMesh는 Mesh 속성에 대한 것. 하나와 전체의 차이
 	Body = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Body"));
 	Water = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Water"));
 	Light = CreateDefaultSubobject<UPointLightComponent>(TEXT("Light"));
@@ -29,6 +28,19 @@ AFountain::AFountain()
 void AFountain::BeginPlay()
 {
 	Super::BeginPlay();
+	LOG(Warning, TEXT("Acotr Name : %s, ID: %d, Location X : %.3f"), *GetName(), ID, GetActorLocation().X);
+}
+
+void AFountain::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+	LOG_S(Warning);
+}
+
+void AFountain::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	LOG_S(Warning);
 }
 
 // Called every frame

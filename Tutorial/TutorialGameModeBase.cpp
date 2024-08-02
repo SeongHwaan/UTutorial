@@ -2,19 +2,16 @@
 
 
 #include "TutorialGameModeBase.h"
-#include "TutorialPawn.h"
+#include "TutorialCharacter.h"
 #include "TutorialPlayerController.h"
 
 ATutorialGameModeBase::ATutorialGameModeBase()
 {
-	DefaultPawnClass = ATutorialPawn::StaticClass();
-	PlayerControllerClass = ATutorialPlayerController::StaticClass();
 }
 
-void ATutorialGameModeBase::PostLogin(ATutorialPlayerController* NewPlayer)
+void ATutorialGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
-	ABLOG(Warning, TEXT("PostLogin Begin"));
+	LOG(Warning, TEXT("PostLogin Begin"));
 	Super::PostLogin(NewPlayer);
-	ABLOG(Warning, TEXT("PostLogin End"));
+	LOG(Warning, TEXT("PostLogin End"));
 }
-
