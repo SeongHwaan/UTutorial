@@ -22,6 +22,12 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	enum class ECameraMode
+	{
+		BackView,
+		TopView
+	};
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -31,8 +37,20 @@ public:
 
 	void Move(const FVector2D& Vector);
 	void Jump(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
+	void Look(const FVector2D& Vector);
 
+	void BackViewCamera();
+	void TopViewCamera();
+	void SetCameraMode(ECameraMode NewCameraMode);
+	void ChangeCameraMode();
+
+	ECameraMode CurrentCameraMode;
+	FVector DirectionToMove;	
+
+	float ArmLengthTo;
+	FRotator ArmRotationTo = FRotator::ZeroRotator;
+	float ArmLengthSpeed;
+	float ArmRotationSpeed;
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> SpringArm;

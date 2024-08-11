@@ -6,6 +6,12 @@
 #include "EnhancedInputSubsystems.h"
 #include "TutorialCharacter.h"
 
+
+ATutorialPlayerController::ATutorialPlayerController()
+{
+	//Using character member here makes NULL problem
+}
+
 void ATutorialPlayerController::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -23,6 +29,8 @@ void ATutorialPlayerController::OnPossess(APawn* aPawn)
 void ATutorialPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	TCharacter = Cast<ATutorialCharacter>(GetCharacter());
+
 	if (UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
 		//SubSystem->ClearAllMappings();
@@ -36,25 +44,29 @@ void ATutorialPlayerController::SetupInputComponent()
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATutorialPlayerController::Move);
-		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ATutorialPlayerController::Jump);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATutorialPlayerController::Look);
+		EnhancedInputComponent->BindAction(CameraChangeAction, ETriggerEvent::Started, this, &ATutorialPlayerController::ChangeCameraMode);
 	}
 }
 
 void ATutorialPlayerController::Move(const FInputActionValue& Value)
 {
 	const FVector2D MovementVector = Value.Get<FVector2D>();
-
-	if (ATutorialCharacter* TCharacter = Cast<ATutorialCharacter>(GetCharacter()))
-	{
-		TCharacter->Move(MovementVector);
-	}
+	TCharacter->Move(MovementVector);
 }
 
 void ATutorialPlayerController::Jump(const FInputActionValue& Value)
 {
+
 }
 
 void ATutorialPlayerController::Look(const FInputActionValue& Value)
 {
+	const FVector2D	LookAxisVector = Value.Get<FVector2D>();
+	TCharacter->Look(LookAxisVector);
+}
+
+void ATutorialPlayerController::ChangeCameraMode()
+{
+	TCharacter->ChangeCameraMode();
 }

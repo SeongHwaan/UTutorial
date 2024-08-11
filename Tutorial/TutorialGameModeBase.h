@@ -14,9 +14,10 @@ class TUTORIAL_API ATutorialGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 
-	ATutorialGameModeBase();
-
 public:
+	
+	ATutorialGameModeBase();
+	
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 };
 

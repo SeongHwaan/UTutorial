@@ -5,17 +5,18 @@
 #include "Tutorial.h"
 #include "GameFramework/PlayerController.h"
 #include "InputActionValue.h"
+#include "TutorialCharacter.h"
 #include "TutorialPlayerController.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class TUTORIAL_API ATutorialPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
 public:
+
+	ATutorialPlayerController();
+
 	virtual void PostInitializeComponents() override;
 	virtual void OnPossess(APawn* aPawn) override;	//Possess is deprecated
 	
@@ -25,6 +26,7 @@ public:
 	void Move(const FInputActionValue& Value);
 	void Jump(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void ChangeCameraMode();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
@@ -33,11 +35,12 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
 	TObjectPtr<class UInputAction> MoveAction;
 
-
-	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
-	TObjectPtr<class UInputAction> JumpAction;
-
-
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
 	TObjectPtr<class UInputAction> LookAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
+	TObjectPtr<class UInputAction> CameraChangeAction;
+
+	UPROPERTY()
+	TObjectPtr<ATutorialCharacter> TCharacter;
 };
