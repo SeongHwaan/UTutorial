@@ -45,7 +45,10 @@ void ATutorialPlayerController::SetupInputComponent()
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATutorialPlayerController::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATutorialPlayerController::Look);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ATutorialPlayerController::StartJump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATutorialPlayerController::StopJump);
 		EnhancedInputComponent->BindAction(CameraChangeAction, ETriggerEvent::Started, this, &ATutorialPlayerController::ChangeCameraMode);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ATutorialPlayerController::Attack);
 	}
 }
 
@@ -55,18 +58,28 @@ void ATutorialPlayerController::Move(const FInputActionValue& Value)
 	TCharacter->Move(MovementVector);
 }
 
-void ATutorialPlayerController::Jump(const FInputActionValue& Value)
-{
-
-}
-
 void ATutorialPlayerController::Look(const FInputActionValue& Value)
 {
 	const FVector2D	LookAxisVector = Value.Get<FVector2D>();
 	TCharacter->Look(LookAxisVector);
 }
 
+void ATutorialPlayerController::StartJump()
+{
+	TCharacter->Jump();
+}
+
+void ATutorialPlayerController::StopJump()
+{
+	TCharacter->StopJumping();
+}
+
 void ATutorialPlayerController::ChangeCameraMode()
 {
 	TCharacter->ChangeCameraMode();
+}
+
+void ATutorialPlayerController::Attack()
+{
+	TCharacter->Attack();
 }

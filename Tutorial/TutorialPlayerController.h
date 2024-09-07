@@ -24,9 +24,11 @@ public:
 	virtual void SetupInputComponent() override;
 
 	void Move(const FInputActionValue& Value);
-	void Jump(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void StartJump();
+	void StopJump();
 	void ChangeCameraMode();
+	void Attack();
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
@@ -39,7 +41,13 @@ private:
 	TObjectPtr<class UInputAction> LookAction;
 
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
+	TObjectPtr<class UInputAction> JumpAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
 	TObjectPtr<class UInputAction> CameraChangeAction;
+
+	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
+	TObjectPtr<class UInputAction> AttackAction;
 
 	UPROPERTY()
 	TObjectPtr<ATutorialCharacter> TCharacter;

@@ -29,32 +29,71 @@ protected:
 	};
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	void Move(const FVector2D& Vector);
-	void Jump(const FInputActionValue& Value);
-	void Look(const FVector2D& Vector);
-
-	void BackViewCamera();
-	void TopViewCamera();
-	void SetCameraMode(ECameraMode NewCameraMode);
-	void ChangeCameraMode();
-
 	ECameraMode CurrentCameraMode;
-	FVector DirectionToMove;	
+	FVector DirectionToMove;
 
 	float ArmLengthTo;
 	FRotator ArmRotationTo = FRotator::ZeroRotator;
 	float ArmLengthSpeed;
 	float ArmRotationSpeed;
 
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+	virtual void PostInitializeComponents() override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	void Move(const FVector2D& Vector);
+	void Look(const FVector2D& Vector);
+	void CustomJump();
+	void CustomStopJump();
+	void ChangeCameraMode();
+	void Attack();
+
+
+	void BackViewCamera();
+	void TopViewCamera();
+	void SetCameraMode(ECameraMode NewCameraMode);
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void AttackStartComboState();
+	void AttackEndComboState();
+	void AttackCheck();
+
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> SpringArm;
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
+
+private:
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	bool IsAttacking;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	bool CanNextCombo;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	bool IsComboInputOn;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	int32 CurrentCombo;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	int32 MaxCombo;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	float AttackRange;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
+	float AttackRadius;
+	
+
+	UPROPERTY()
+	TObjectPtr<class UTutorialAnimInstance> TAnim;
 };
