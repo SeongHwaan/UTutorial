@@ -53,7 +53,6 @@ public:
 	void ChangeCameraMode();
 	void Attack();
 
-
 	void BackViewCamera();
 	void TopViewCamera();
 	void SetCameraMode(ECameraMode NewCameraMode);
@@ -70,6 +69,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
+	TSubclassOf<class ATutorialWeapon> DefaultWeaponClass;
+	FName WeaponSocket;
+
+	bool CanSetWeapon();
+	void SetWeapon(class ATutorialWeapon* NewWeapon);
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	TObjectPtr<class ATutorialWeapon> CurrentWeapon;
 
 private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
@@ -93,7 +101,6 @@ private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
 	float AttackRadius;
 	
-
 	UPROPERTY()
 	TObjectPtr<class UTutorialAnimInstance> TAnim;
 };

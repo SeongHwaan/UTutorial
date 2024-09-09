@@ -2,9 +2,10 @@
 
 
 #include "TutorialCharacter.h"
+#include "TutorialAnimInstance.h"
+#include "TutorialWeapon.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "TutorialAnimInstance.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
 
@@ -28,6 +29,8 @@ ATutorialCharacter::ATutorialCharacter()
 	AttackRange = 200.0f;
 	AttackRadius = 50.0f;
 
+	WeaponSocket = FName(TEXT("hand_rSocket"));
+
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
 
@@ -44,12 +47,21 @@ ATutorialCharacter::ATutorialCharacter()
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("TCharacter"));
+
+	DefaultWeaponClass = ATutorialWeapon::StaticClass();
 }
 
 // Called when the game starts or when spawned
 void ATutorialCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (DefaultWeaponClass)
+	{
+		auto SpawnedWeapon = GetWorld()->SpawnActor<ATutorialWeapon>(DefaultWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
+		SpawnedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
+		//Set Skeleton Socket position and rotation instead of Weapon
+	}
 }
 
 // Called every frame
@@ -302,5 +314,22 @@ void ATutorialCharacter::AttackCheck()
 			FDamageEvent DamageEvent;
 			HitResult.GetActor()->TakeDamage(50.0f, DamageEvent, GetController(), this);
 		}
+	}
+}
+
+bool ATutorialCharacter::CanSetWeapon()
+{
+	return (CurrentWeapon == nullptr);
+}
+
+void ATutorialCharacter::SetWeapon(ATutorialWeapon* NewWeapon)
+{
+	CHECK(NewWeapon != nullptr && CurrentWeapon == nullptr);
+
+	if (NewWeapon != nullptr)
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
+		NewWeapon->SetOwner(this);
+		CurrentWeapon = NewWeapon;
 	}
 }
