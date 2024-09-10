@@ -4,6 +4,7 @@
 #include "TutorialCharacter.h"
 #include "TutorialAnimInstance.h"
 #include "TutorialWeapon.h"
+#include "TutorialCharacterStatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
@@ -33,6 +34,7 @@ ATutorialCharacter::ATutorialCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
+	CharacterStat = CreateDefaultSubobject<UTutorialCharacterStatComponent>(TEXT("CHARACTERSTAT"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -83,7 +85,7 @@ void ATutorialCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	TAnim = Cast<UTutorialAnimInstance>(GetMesh()->GetAnimInstance());
-	CHECK(nullptr != TAnim);
+	CHECK(TAnim !=nullptr);
 
 	TAnim->OnMontageEnded.AddDynamic(this, &ATutorialCharacter::OnAttackMontageEnded);
 	TAnim->OnAttackHitCheck.AddUObject(this, &ATutorialCharacter::AttackCheck);
@@ -96,6 +98,13 @@ void ATutorialCharacter::PostInitializeComponents()
 			AttackStartComboState();
 			TAnim->JumpToAttackMontageSection(CurrentCombo);
 		}
+		});
+
+	CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+
+		LOG(Warning, TEXT("HP ZERO"));
+		TAnim->SetDeadAnim();
+		SetActorEnableCollision(false);
 		});
 }
 
@@ -110,11 +119,7 @@ float ATutorialCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dam
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	LOG(Warning, TEXT("Actor : %s took Damage : %f"), *GetName(), FinalDamage);
 
-	if (FinalDamage > 0.0f)
-	{
-		TAnim->SetDeadAnim();
-		SetActorEnableCollision(false);
-	}
+	CharacterStat->SetDamage(FinalDamage);
 
 	return FinalDamage;
 }
@@ -312,7 +317,7 @@ void ATutorialCharacter::AttackCheck()
 			LOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.GetActor()->GetName());
 
 			FDamageEvent DamageEvent;
-			HitResult.GetActor()->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitResult.GetActor()->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
 		}
 	}
 }

@@ -70,14 +70,17 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<UCameraComponent> Camera;
 
+	FName WeaponSocket;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon")
 	TSubclassOf<class ATutorialWeapon> DefaultWeaponClass;
-	FName WeaponSocket;
 
 	bool CanSetWeapon();
 	void SetWeapon(class ATutorialWeapon* NewWeapon);
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	TObjectPtr<class ATutorialWeapon> CurrentWeapon;
+
+	UPROPERTY(VisibleAnywhere, Category = "Stat")
+	TObjectPtr<class UTutorialCharacterStatComponent> CharacterStat;
 
 private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
