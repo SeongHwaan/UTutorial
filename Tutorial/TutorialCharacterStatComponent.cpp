@@ -45,7 +45,7 @@ void UTutorialCharacterStatComponent::SetNewLevel(int32 NewLevel)
 	if (CurrentStatData != nullptr)
 	{
 		Level = NewLevel;
-		CurrentHP = CurrentStatData->MaxHP;
+		SetHP(CurrentStatData->MaxHP);
 	}
 	else
 	{
@@ -56,10 +56,16 @@ void UTutorialCharacterStatComponent::SetNewLevel(int32 NewLevel)
 void UTutorialCharacterStatComponent::SetDamage(float NewDamage)
 {
 	CHECK(CurrentStatData != nullptr);
-	CurrentHP = FMath::Clamp<float>(CurrentHP - NewDamage, 0.0f, CurrentStatData->MaxHP);
+	SetHP(FMath::Clamp<float>(CurrentHP - NewDamage, 0.0f, CurrentStatData->MaxHP));
+}
 
-	if (CurrentHP <= 0.0f)
+void UTutorialCharacterStatComponent::SetHP(float NewHP)
+{
+	CurrentHP = NewHP;
+	OnHPChanged.Broadcast();
+	if (CurrentHP < KINDA_SMALL_NUMBER)
 	{
+		CurrentHP = 0.0f;
 		OnHPIsZero.Broadcast();
 	}
 }
@@ -68,5 +74,11 @@ float UTutorialCharacterStatComponent::GetAttack()
 {
 	//CHECK(CurrentStatData != nullptr);
 	return CurrentStatData->Attack;
+}
+
+float UTutorialCharacterStatComponent::GetHPRatio()
+{
+	//CHECK(CurrentStatData != nullptr);
+	return (CurrentStatData->MaxHP < KINDA_SMALL_NUMBER) ? 0.0f : (CurrentHP / CurrentStatData->MaxHP);
 }
 

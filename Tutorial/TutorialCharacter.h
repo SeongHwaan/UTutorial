@@ -82,6 +82,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Stat")
 	TObjectPtr<class UTutorialCharacterStatComponent> CharacterStat;
 
+	UPROPERTY(VisibleAnywhere, Category = "UI")
+	TObjectPtr<class UWidgetComponent> HPBarWidget;
+
 private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = true))
 	bool IsAttacking;

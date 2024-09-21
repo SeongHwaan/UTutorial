@@ -5,10 +5,12 @@
 #include "TutorialAnimInstance.h"
 #include "TutorialWeapon.h"
 #include "TutorialCharacterStatComponent.h"
+#include "TutorialCharacterWidget.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
+#include "Components/WidgetComponent.h"
 
 // Sets default values
 ATutorialCharacter::ATutorialCharacter()
@@ -35,12 +37,18 @@ ATutorialCharacter::ATutorialCharacter()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
 	CharacterStat = CreateDefaultSubobject<UTutorialCharacterStatComponent>(TEXT("CHARACTERSTAT"));
+	HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBARWIDGET"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
+	HPBarWidget->SetupAttachment(GetMesh());
 
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -90.0f), FRotator(0.0f, -90.0f, 0.0f));
 	GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+
+	HPBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
+	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	HPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
 
 	CurrentCameraMode = ECameraMode::TopView;
 	SetCameraMode(CurrentCameraMode);
@@ -106,6 +114,14 @@ void ATutorialCharacter::PostInitializeComponents()
 		TAnim->SetDeadAnim();
 		SetActorEnableCollision(false);
 		});
+	
+	HPBarWidget->InitWidget();
+	auto CharacterWidget = Cast<UTutorialCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	CHECK(CharacterWidget != nullptr);
+	if (CharacterWidget != nullptr)
+	{
+		CharacterWidget->BindCharacterStat(CharacterStat);
+	}
 }
 
 // Called to bind functionality to input
