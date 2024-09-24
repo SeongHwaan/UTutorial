@@ -6,6 +6,7 @@
 #include "TutorialWeapon.h"
 #include "TutorialCharacterStatComponent.h"
 #include "TutorialCharacterWidget.h"
+#include "TutorialAIController.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
@@ -51,7 +52,6 @@ ATutorialCharacter::ATutorialCharacter()
 	HPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
 
 	CurrentCameraMode = ECameraMode::TopView;
-	SetCameraMode(CurrentCameraMode);
 	
 	DirectionToMove = FVector::ZeroVector;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
@@ -59,6 +59,9 @@ ATutorialCharacter::ATutorialCharacter()
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("TCharacter"));
 
 	DefaultWeaponClass = ATutorialWeapon::StaticClass();
+
+	AIControllerClass = ATutorialAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called when the game starts or when spawned
@@ -121,6 +124,21 @@ void ATutorialCharacter::PostInitializeComponents()
 	if (CharacterWidget != nullptr)
 	{
 		CharacterWidget->BindCharacterStat(CharacterStat);
+	}
+}
+
+void ATutorialCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (IsPlayerControlled())
+	{
+		SetCameraMode(CurrentCameraMode);
+		SetPlayer();
+	}
+	else
+	{
+		SetNonPlayer();
 	}
 }
 
@@ -219,7 +237,7 @@ void ATutorialCharacter::Attack()
 	}
 }
 
-void ATutorialCharacter::BackViewCamera()
+void ATutorialCharacter::SetBackViewCamera()
 {
 	ArmLengthTo = 450.0f;
 	//UsePawnControlRotation: SpringArm match its rotation to the Player Controller's control rotation. 
@@ -239,7 +257,7 @@ void ATutorialCharacter::BackViewCamera()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 }
 
-void ATutorialCharacter::TopViewCamera()
+void ATutorialCharacter::SetTopViewCamera()
 {
 	ArmLengthTo = 800.0f;
 	ArmRotationTo = FRotator(-45.0f, 0.0f, 0.0f);
@@ -262,13 +280,29 @@ void ATutorialCharacter::SetCameraMode(ECameraMode NewCameraMode)
 	switch (CurrentCameraMode)
 	{
 	case ECameraMode::BackView:
-		BackViewCamera();
+		SetBackViewCamera();
 		break;
 	case ECameraMode::TopView:
-		TopViewCamera();
+		SetTopViewCamera();
 		break;
 	}
 }
+
+void ATutorialCharacter::SetPlayer()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+}
+
+void ATutorialCharacter::SetNonPlayer()
+{
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 480.0f, 0.0f);
+
+	GetCharacterMovement()->MaxWalkSpeed = 300.0f;
+}
+
 
 void ATutorialCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -276,6 +310,7 @@ void ATutorialCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInter
 	CHECK(CurrentCombo > 0);
 	IsAttacking = false;
 	AttackEndComboState();
+	OnAttackEnd.Broadcast();
 }
 
 void ATutorialCharacter::AttackStartComboState()
@@ -284,7 +319,6 @@ void ATutorialCharacter::AttackStartComboState()
 	IsComboInputOn = false;
 	CHECK(FMath::IsWithinInclusive<int32>(CurrentCombo, 0, MaxCombo - 1));
 	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
-
 }
 
 void ATutorialCharacter::AttackEndComboState()

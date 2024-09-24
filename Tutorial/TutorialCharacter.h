@@ -9,6 +9,8 @@
 #include "InputActionValue.h"
 #include "TutorialCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndDelegate);
+
 UCLASS()
 class TUTORIAL_API ATutorialCharacter : public ACharacter
 {
@@ -25,7 +27,14 @@ protected:
 	enum class ECameraMode
 	{
 		BackView,
-		TopView
+		TopView,
+	};
+
+	//Setting
+	enum class EPlayerMode
+	{
+		Player,
+		NonPlayer
 	};
 
 public:	
@@ -43,6 +52,7 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void PossessedBy(AController* NewController) override;
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -52,10 +62,14 @@ public:
 	void CustomStopJump();
 	void ChangeCameraMode();
 	void Attack();
+	FOnAttackEndDelegate OnAttackEnd;
 
-	void BackViewCamera();
-	void TopViewCamera();
+	void SetBackViewCamera();
+	void SetTopViewCamera();
 	void SetCameraMode(ECameraMode NewCameraMode);
+
+	void SetPlayer();
+	void SetNonPlayer();
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
