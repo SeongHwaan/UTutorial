@@ -78,6 +78,8 @@ public:
 	void AttackEndComboState();
 	void AttackCheck();
 
+	void OnAssetLoadCompleted();
+
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> SpringArm;
 
@@ -123,4 +125,7 @@ private:
 	
 	UPROPERTY()
 	TObjectPtr<class UTutorialAnimInstance> TAnim;
+
+	FSoftObjectPath CharacterAssetToLoad = FSoftObjectPath(nullptr);
+	TSharedPtr<struct FStreamableHandle> AssetStreamingHandle;
 };

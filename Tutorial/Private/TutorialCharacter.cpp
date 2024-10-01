@@ -7,11 +7,13 @@
 #include "TutorialCharacterStatComponent.h"
 #include "TutorialCharacterWidget.h"
 #include "TutorialAIController.h"
+#include "TutorialGameInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/DamageEvents.h"
 #include "Components/WidgetComponent.h"
+#include "TutorialCharacterSetting.h"
 
 // Sets default values
 ATutorialCharacter::ATutorialCharacter()
@@ -58,10 +60,9 @@ ATutorialCharacter::ATutorialCharacter()
 
 	GetCapsuleComponent()->SetCollisionProfileName(TEXT("TCharacter"));
 
-	DefaultWeaponClass = ATutorialWeapon::StaticClass();
-
 	AIControllerClass = ATutorialAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
 }
 
 // Called when the game starts or when spawned
@@ -74,6 +75,21 @@ void ATutorialCharacter::BeginPlay()
 		auto SpawnedWeapon = GetWorld()->SpawnActor<ATutorialWeapon>(DefaultWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
 		SpawnedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
 		//Set Skeleton Socket position and rotation instead of Weapon
+	}
+
+	if (!IsPlayerControlled())
+	{
+		auto DefaultSetting = GetDefault<UTutorialCharacterSetting>();
+		int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
+		CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
+
+		auto TGameInstance = Cast<UTutorialGameInstance>(GetGameInstance());
+		if (TGameInstance != nullptr)
+		{
+			//
+			AssetStreamingHandle = TGameInstance->StreamableManager.RequestAsyncLoad(
+				CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &ATutorialCharacter::OnAssetLoadCompleted));
+		}
 	}
 }
 
@@ -369,6 +385,16 @@ void ATutorialCharacter::AttackCheck()
 			FDamageEvent DamageEvent;
 			HitResult.GetActor()->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
 		}
+	}
+}
+
+void ATutorialCharacter::OnAssetLoadCompleted()
+{
+	AssetStreamingHandle->ReleaseHandle();
+	TSoftObjectPtr<USkeletalMesh> LoadedAssetPath(CharacterAssetToLoad);
+	if (LoadedAssetPath.IsValid())
+	{
+		GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
 	}
 }
 

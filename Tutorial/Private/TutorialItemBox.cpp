@@ -23,15 +23,12 @@ ATutorialItemBox::ATutorialItemBox()
 
 	Trigger->SetCollisionProfileName(TEXT("ItemBox"));
 	Box->SetCollisionProfileName(TEXT("NoCollision"));
-
-	WeaponItemClass = ATutorialWeapon::StaticClass();
 }
 
 // Called when the game starts or when spawned
 void ATutorialItemBox::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ATutorialItemBox::PostInitializeComponents()

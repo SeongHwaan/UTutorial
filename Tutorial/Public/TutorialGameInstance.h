@@ -5,6 +5,7 @@
 #include "Tutorial.h"
 #include "Engine/DataTable.h"
 #include "Engine/GameInstance.h"
+#include "Engine/StreamableManager.h"
 #include "TutorialGameInstance.generated.h"
 
 USTRUCT(BlueprintType)
@@ -45,6 +46,8 @@ public:
 
 	virtual void Init() override;
 	FTutorialCharacterData* GetTutorialCharacterData(int32 Level);
+
+	FStreamableManager StreamableManager;
 
 private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "CharacterData", Meta = (AllowPrivateAccess = true))

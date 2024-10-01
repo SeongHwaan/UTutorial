@@ -5,11 +5,11 @@ using System.Collections.Generic;
 
 public class TutorialEditorTarget : TargetRules
 {
-	public TutorialEditorTarget( TargetInfo Target) : base(Target)
+	public TutorialEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_1;
-		ExtraModuleNames.Add("Tutorial");
-	}
+        ExtraModuleNames.AddRange(new string[] { "Tutorial", "TutorialSetting" });
+    }
 }
