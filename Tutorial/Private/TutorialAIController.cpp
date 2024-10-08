@@ -5,6 +5,8 @@
 #include "NavigationSystem.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+
 
 const FName ATutorialAIController::HomePosKey(TEXT("HomePos"));
 const FName ATutorialAIController::PatrolPosKey(TEXT("PatrolPos"));
@@ -22,10 +24,19 @@ void ATutorialAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	//GetWorld()->GetTimerManager().SetTimer(RepeatTimerHandle, this, &ATutorialAIController::OnRepeatTimer, RepeatInterval, true);
+}
 
-	if (UseBlackboard(BBAsset,BlackboardComp))
+void ATutorialAIController::OnUnPossess()
+{
+	Super::OnUnPossess();
+	//GetWorld()->GetTimerManager().ClearTimer(RepeatTimerHandle);
+}
+
+void ATutorialAIController::RunAI()
+{
+	if (UseBlackboard(BBAsset, BlackboardComp))
 	{
-		Blackboard->SetValueAsVector(HomePosKey, InPawn->GetActorLocation());
+		Blackboard->SetValueAsVector(HomePosKey, GetPawn()->GetActorLocation());
 		if (!RunBehaviorTree(BTAsset))
 		{
 			LOG(Error, TEXT("AIController couldn't run behavior tree!"));
@@ -33,10 +44,13 @@ void ATutorialAIController::OnPossess(APawn* InPawn)
 	}
 }
 
-void ATutorialAIController::OnUnPossess()
+void ATutorialAIController::StopAI()
 {
-	Super::OnUnPossess();
-	//GetWorld()->GetTimerManager().ClearTimer(RepeatTimerHandle);
+	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
+	if (BehaviorTreeComponent != nullptr)
+	{
+		BehaviorTreeComponent->StopTree(EBTStopMode::Safe);
+	}
 }
 
 //void ATutorialAIController::OnRepeatTimer()

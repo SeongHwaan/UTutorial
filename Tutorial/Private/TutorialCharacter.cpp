@@ -7,6 +7,7 @@
 #include "TutorialCharacterStatComponent.h"
 #include "TutorialCharacterWidget.h"
 #include "TutorialAIController.h"
+#include "TutorialPlayerController.h"
 #include "TutorialGameInstance.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -14,11 +15,13 @@
 #include "Engine/DamageEvents.h"
 #include "Components/WidgetComponent.h"
 #include "TutorialCharacterSetting.h"
+#include "TutorialPlayerState.h"
+#include "TutorialHUDWidget.h"
 
 // Sets default values
 ATutorialCharacter::ATutorialCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	ArmLengthTo = 0.0f;
@@ -54,7 +57,7 @@ ATutorialCharacter::ATutorialCharacter()
 	HPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
 
 	CurrentCameraMode = ECameraMode::TopView;
-	
+
 	DirectionToMove = FVector::ZeroVector;
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
@@ -63,12 +66,120 @@ ATutorialCharacter::ATutorialCharacter()
 	AIControllerClass = ATutorialAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
+	AssetIndex = 0;
+
+	bIsPlayer = false;
+
+	DeadTimer = 5.0f;
+
+	SetActorHiddenInGame(true);
+	HPBarWidget->SetHiddenInGame(true);
+	SetCanBeDamaged(false);
+}
+
+void ATutorialCharacter::SetCharacterState(ECharacterState NewState)
+{
+	CHECK(CurrentState != NewState);
+	CurrentState = NewState;
+	
+	switch (CurrentState)
+	{
+	case ECharacterState::LOADING:
+	{
+		if (bIsPlayer)
+		{
+			DisableInput(TPlayerController);
+
+			TPlayerController->GetHUDWidget()->BindCharacterStat(CharacterStat);
+
+			auto TPlayerState = Cast<ATutorialPlayerState>(GetPlayerState());
+			CHECK(TPlayerState != nullptr);
+			//Default Character > CharacterComponent's Level
+			//Player Character  > PlayerState's Level
+			CharacterStat->SetNewLevel(TPlayerState->GetCharacterLevel());
+		}
+
+		SetActorHiddenInGame(true);
+		HPBarWidget->SetHiddenInGame(true);
+		SetCanBeDamaged(false);
+		break;
+	}
+	case ECharacterState::READY:
+	{
+		SetActorHiddenInGame(false);
+		HPBarWidget->SetHiddenInGame(false);
+		SetCanBeDamaged(true);
+
+		CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+
+			SetCharacterState(ECharacterState::DEAD);
+			});
+
+		HPBarWidget->InitWidget();
+		auto CharacterWidget = Cast<UTutorialCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+		CHECK(CharacterWidget != nullptr);
+		CharacterWidget->BindCharacterStat(CharacterStat);
+		
+		if (bIsPlayer)
+		{
+			SetCameraMode(CurrentCameraMode);
+			SetPlayer();
+			EnableInput(TPlayerController);
+		}
+		else
+		{
+			SetNonPlayer();
+			TAIController->RunAI();
+		}
+
+		break;
+	}
+	case ECharacterState::DEAD:
+	{
+		SetActorEnableCollision(false);
+		GetMesh()->SetHiddenInGame(false);
+		HPBarWidget->SetHiddenInGame(true);
+		TAnim->SetDeadAnim();
+		SetCanBeDamaged(false);
+
+		if (bIsPlayer)
+		{
+			DisableInput(TPlayerController);
+		}
+		else
+		{
+			TAIController->StopAI();
+		}
+
+		GetWorld()->GetTimerManager().SetTimer(DeadTimerHandle, FTimerDelegate::CreateLambda([this]() -> void {
+
+			if (bIsPlayer)
+			{
+				TPlayerController->RestartLevel();
+			}
+			else
+			{
+				Destroy();
+			}
+
+			}), DeadTimer, false);
+
+		break;
+	}
+	}
+}
+
+ECharacterState ATutorialCharacter::GetCharacterState() const
+{
+	return ECharacterState();
 }
 
 // Called when the game starts or when spawned
 void ATutorialCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	bIsPlayer = IsPlayerControlled();
 
 	if (DefaultWeaponClass)
 	{
@@ -77,20 +188,35 @@ void ATutorialCharacter::BeginPlay()
 		//Set Skeleton Socket position and rotation instead of Weapon
 	}
 
-	if (!IsPlayerControlled())
+	if (bIsPlayer)
 	{
-		auto DefaultSetting = GetDefault<UTutorialCharacterSetting>();
-		int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
-		CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
-
-		auto TGameInstance = Cast<UTutorialGameInstance>(GetGameInstance());
-		if (TGameInstance != nullptr)
-		{
-			//
-			AssetStreamingHandle = TGameInstance->StreamableManager.RequestAsyncLoad(
-				CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &ATutorialCharacter::OnAssetLoadCompleted));
-		}
+		TPlayerController = Cast<ATutorialPlayerController>(GetController());
+		CHECK(TPlayerController != nullptr);
 	}
+	else
+	{
+		TAIController = Cast<ATutorialAIController>(GetController());
+		CHECK(TAIController != nullptr);
+	}
+
+	auto DefaultSetting = GetDefault<UTutorialCharacterSetting>();
+	
+	if (bIsPlayer)
+	{
+		AssetIndex = 2;
+	}
+	else
+	{
+		AssetIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
+	}
+
+	CharacterAssetToLoad = DefaultSetting->CharacterAssets[AssetIndex];
+
+	auto TGameInstance = Cast<UTutorialGameInstance>(GetGameInstance());
+	CHECK(TGameInstance != nullptr);
+	AssetStreamingHandle = TGameInstance->StreamableManager.RequestAsyncLoad(
+		CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &ATutorialCharacter::OnAssetLoadCompleted));
+	SetCharacterState(ECharacterState::LOADING);
 }
 
 // Called every frame
@@ -112,7 +238,7 @@ void ATutorialCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	TAnim = Cast<UTutorialAnimInstance>(GetMesh()->GetAnimInstance());
-	CHECK(TAnim !=nullptr);
+	CHECK(TAnim != nullptr);
 
 	TAnim->OnMontageEnded.AddDynamic(this, &ATutorialCharacter::OnAttackMontageEnded);
 	TAnim->OnAttackHitCheck.AddUObject(this, &ATutorialCharacter::AttackCheck);
@@ -127,35 +253,25 @@ void ATutorialCharacter::PostInitializeComponents()
 		}
 		});
 
-	CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
+	//CharacterStat->OnHPIsZero.AddLambda([this]() -> void {
 
-		LOG(Warning, TEXT("HP ZERO"));
-		TAnim->SetDeadAnim();
-		SetActorEnableCollision(false);
-		});
-	
-	HPBarWidget->InitWidget();
-	auto CharacterWidget = Cast<UTutorialCharacterWidget>(HPBarWidget->GetUserWidgetObject());
-	CHECK(CharacterWidget != nullptr);
-	if (CharacterWidget != nullptr)
-	{
-		CharacterWidget->BindCharacterStat(CharacterStat);
-	}
+	//	LOG(Warning, TEXT("HP ZERO"));
+	//	TAnim->SetDeadAnim();
+	//	SetActorEnableCollision(false);
+	//	});
+
+	//HPBarWidget->InitWidget();
+	//auto CharacterWidget = Cast<UTutorialCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	//CHECK(CharacterWidget != nullptr);
+	//if (CharacterWidget != nullptr)
+	//{
+	//	CharacterWidget->BindCharacterStat(CharacterStat);
+	//}
 }
 
 void ATutorialCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
-
-	if (IsPlayerControlled())
-	{
-		SetCameraMode(CurrentCameraMode);
-		SetPlayer();
-	}
-	else
-	{
-		SetNonPlayer();
-	}
 }
 
 // Called to bind functionality to input
@@ -171,6 +287,16 @@ float ATutorialCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dam
 
 	CharacterStat->SetDamage(FinalDamage);
 
+	if (CurrentState == ECharacterState::DEAD)
+	{
+		if (EventInstigator->IsPlayerController())
+		{
+			auto APlayerController = Cast<ATutorialPlayerController>(EventInstigator);
+			CHECK(APlayerController != nullptr, 0.0f);
+			APlayerController->NPCKill(this);
+		}
+	}
+
 	return FinalDamage;
 }
 
@@ -178,7 +304,7 @@ void ATutorialCharacter::Move(const FVector2D& Vector)
 {
 	switch (CurrentCameraMode)
 	{
-	// Get Front from 'this rotation'
+		// Get Front from 'this rotation'
 	case ECameraMode::BackView:
 		//EAxis::Value == Unreal XYZ Vector, Vector.Value == Input XY Vector 
 		//Forward
@@ -186,7 +312,7 @@ void ATutorialCharacter::Move(const FVector2D& Vector)
 		//Right	
 		AddMovementInput(FRotationMatrix(GetControlRotation()).GetUnitAxis(EAxis::Y), Vector.X);
 		break;
-	// Get Front from 'this movement', then set rotation
+		// Get Front from 'this movement', then set rotation
 	case ECameraMode::TopView:
 		DirectionToMove.X = Vector.Y;
 		DirectionToMove.Y = Vector.X;
@@ -358,7 +484,7 @@ void ATutorialCharacter::AttackCheck()
 		Params);
 
 #if ENABLE_DRAW_DEBUG
-	
+
 	FVector TraceVec = GetActorForwardVector() * AttackRange;
 	FVector Center = GetActorLocation() + TraceVec * 0.5f;
 	float HalfHeight = AttackRange * 0.5f + AttackRadius;
@@ -369,7 +495,7 @@ void ATutorialCharacter::AttackCheck()
 	DrawDebugCapsule(GetWorld(),
 		Center,			//Location
 		HalfHeight,		//Half Length of Capsule
-		AttackRadius,	
+		AttackRadius,
 		CapusuleRot,
 		DrawColor,
 		false,
@@ -392,10 +518,16 @@ void ATutorialCharacter::OnAssetLoadCompleted()
 {
 	AssetStreamingHandle->ReleaseHandle();
 	TSoftObjectPtr<USkeletalMesh> LoadedAssetPath(CharacterAssetToLoad);
-	if (LoadedAssetPath.IsValid())
-	{
-		GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
-	}
+	CHECK(LoadedAssetPath.IsValid());
+
+	GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
+	SetCharacterState(ECharacterState::READY);
+
+}
+
+int32 ATutorialCharacter::GetExp() const
+{
+	return CharacterStat->GetDropExp();
 }
 
 bool ATutorialCharacter::CanSetWeapon()

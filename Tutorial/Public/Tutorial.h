@@ -4,6 +4,15 @@
 
 #include "CoreMinimal.h"
 
+UENUM(BlueprintType)
+enum class ECharacterState : uint8
+{
+	PREINIT,
+	LOADING,
+	READY,
+	DEAD
+};
+
 DECLARE_LOG_CATEGORY_EXTERN(Tutorial, Log, All);
 
 //define new logging macro

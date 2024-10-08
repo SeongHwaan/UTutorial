@@ -5,7 +5,7 @@
 #include "TutorialCharacterStatComponent.h"
 #include "Components/ProgressBar.h"
 
-
+//Bind once through raw data
 void UTutorialCharacterWidget::BindCharacterStat(TObjectPtr<class UTutorialCharacterStatComponent> NewCharacterStat)
 {
 	CHECK(NewCharacterStat != nullptr);
@@ -32,6 +32,7 @@ void UTutorialCharacterWidget::NativeConstruct()
 
 void UTutorialCharacterWidget::UpdateHPWidget()
 {
+	//Use WeakPtr not raw data(raw data used only on Bindings)
 	if (CurrentCharacterStat.IsValid())
 	{
 		if (HPProgressBar != nullptr)

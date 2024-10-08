@@ -4,14 +4,52 @@
 #include "TutorialGameModeBase.h"
 #include "TutorialCharacter.h"
 #include "TutorialPlayerController.h"
+#include "TutorialGameStateBase.h"
+#include "TutorialPlayerState.h"
 
 ATutorialGameModeBase::ATutorialGameModeBase()
 {
+	//Set up on BluePrint
+	//DefaultPawnClass
+	//PlayerControllerClass
+	//PlayerStateClass
+}
+
+void ATutorialGameModeBase::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	TGameState = Cast<ATutorialGameStateBase>(GameState);
 }
 
 void ATutorialGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
-	LOG(Warning, TEXT("PostLogin Begin"));
+	//PostLogin starts
 	Super::PostLogin(NewPlayer);
-	LOG(Warning, TEXT("PostLogin End"));
+	//PostLogin ends after PlayerController::OnPossess
+
+	auto TPlayerState = Cast<ATutorialPlayerState>(NewPlayer->PlayerState);
+	CHECK(TPlayerState != nullptr);
+	TPlayerState->InitPlayerData();
+}
+
+//Flow: 
+// 1. Section call 'GameMode'
+// 2. GameMode call 'GameState' & 'PlayerController'
+// 3. PlayerController call 'PlayerState'
+// GameState manages data across the game (multiple players)
+// PlayerState only manages one player
+void ATutorialGameModeBase::AddScore(ATutorialPlayerController* Player)
+{
+	//Assuming multiple players exist
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		const auto TPlayerController = Cast<ATutorialPlayerController>(It->Get());
+		if ((TPlayerController != nullptr) && (Player == TPlayerController))
+		{
+			TPlayerController->AddGameScore();
+			break;
+		}
+	}
+
+	TGameState->AddGameScore();
 }

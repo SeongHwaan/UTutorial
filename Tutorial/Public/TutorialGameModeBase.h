@@ -17,7 +17,13 @@ class TUTORIAL_API ATutorialGameModeBase : public AGameModeBase
 public:
 	
 	ATutorialGameModeBase();
-	
+
+	virtual void PostInitializeComponents() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	void AddScore(class ATutorialPlayerController* Player);
+
+private:
+	UPROPERTY()
+	TObjectPtr<class ATutorialGameStateBase> TGameState;
 };
 

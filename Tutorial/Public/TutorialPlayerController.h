@@ -23,6 +23,13 @@ public:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 
+	class UTutorialHUDWidget* GetHUDWidget() const;
+	void NPCKill(class ATutorialCharacter* KilledNPC) const;
+	void AddGameScore() const;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UTutorialHUDWidget> HUDWidgetClass;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void StartJump();
@@ -51,4 +58,10 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<ATutorialCharacter> TCharacter;
+
+	UPROPERTY()
+	TObjectPtr<class UTutorialHUDWidget> HUDWidget;
+
+	UPROPERTY()
+	TObjectPtr<class ATutorialPlayerState> TPlayerState;
 };

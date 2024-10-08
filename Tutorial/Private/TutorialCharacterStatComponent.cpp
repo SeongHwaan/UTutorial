@@ -70,15 +70,20 @@ void UTutorialCharacterStatComponent::SetHP(float NewHP)
 	}
 }
 
-float UTutorialCharacterStatComponent::GetAttack()
+float UTutorialCharacterStatComponent::GetAttack() const
 {
 	//CHECK(CurrentStatData != nullptr);
 	return CurrentStatData->Attack;
 }
 
-float UTutorialCharacterStatComponent::GetHPRatio()
+float UTutorialCharacterStatComponent::GetHPRatio() const
 {
 	//CHECK(CurrentStatData != nullptr);
 	return (CurrentStatData->MaxHP < KINDA_SMALL_NUMBER) ? 0.0f : (CurrentHP / CurrentStatData->MaxHP);
+}
+
+int32 UTutorialCharacterStatComponent::GetDropExp() const
+{
+	return CurrentStatData->DropExp;
 }
 

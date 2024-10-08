@@ -4,6 +4,8 @@
 #include "TutorialSection.h"
 #include "TutorialCharacter.h"
 #include "TutorialItemBox.h"
+#include "TutorialPlayerController.h"
+#include "TutorialGameModeBase.h"
 #include "Components/BoxComponent.h"
 
 // Sets default values
@@ -21,7 +23,7 @@ ATutorialSection::ATutorialSection()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MESH"));
 	RootComponent = Mesh;
 
-	//DoesSocketExist should be defined to work. 
+	//DoesSocketExist should be defined to work. Its existence should be obvious. Can't Blueprint overriding. 
 	//CreateDefaultSubobject only works on constructor
 	//Constructor works before blueprint
 	FString AssetPath = TEXT("/Game/Book/StaticMesh/SM_SQUARE.SM_SQUARE");
@@ -149,7 +151,27 @@ void ATutorialSection::OperateGates(bool bOpen)
 
 void ATutorialSection::OnNPCSpawn()
 {
-	GetWorld()->SpawnActor<ATutorialCharacter>(CharacterClass, GetActorLocation() + FVector::UpVector * 88.0f, FRotator::ZeroRotator);
+	GetWorld()->GetTimerManager().ClearTimer(SpawnNPCTimerHandle);
+	auto KeyNPC = GetWorld()->SpawnActor<ATutorialCharacter>(CharacterClass, GetActorLocation() + FVector::UpVector * 88.0f, FRotator::ZeroRotator);
+
+	if (KeyNPC != nullptr)
+	{
+		KeyNPC->OnDestroyed.AddDynamic(this, &ATutorialSection::OnKeyNPCDestroyed);
+	}
+}
+
+void ATutorialSection::OnKeyNPCDestroyed(AActor* DestroyedActor)
+{
+	auto TCharacter = Cast<ATutorialCharacter>(DestroyedActor);
+
+	auto TPlayerController = Cast<ATutorialPlayerController>(TCharacter->LastHitBy);
+	CHECK(TPlayerController != nullptr);
+
+	auto TGameMode = Cast<ATutorialGameModeBase>(GetWorld()->GetAuthGameMode());
+	CHECK(TGameMode != nullptr);
+	TGameMode->AddScore(TPlayerController);
+
+	SetState(ESectionState::COMPLETE);
 }
 
 void ATutorialSection::OnTriggerOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

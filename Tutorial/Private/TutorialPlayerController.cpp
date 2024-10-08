@@ -5,6 +5,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "TutorialCharacter.h"
+#include "TutorialHUDWidget.h"
+#include "TutorialPlayerState.h"
+#include "TutorialCharacter.h"
 
 
 ATutorialPlayerController::ATutorialPlayerController()
@@ -15,12 +18,10 @@ ATutorialPlayerController::ATutorialPlayerController()
 void ATutorialPlayerController::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	LOG_S(Warning);
 }
 
 void ATutorialPlayerController::OnPossess(APawn* aPawn)
 {
-	LOG_S(Warning);
 	Super::OnPossess(aPawn);
 }
 
@@ -36,6 +37,14 @@ void ATutorialPlayerController::BeginPlay()
 		//SubSystem->ClearAllMappings();
 		SubSystem->AddMappingContext(DefaultContext, 0);
 	}
+
+	HUDWidget = CreateWidget<UTutorialHUDWidget>(this, HUDWidgetClass);
+	HUDWidget->AddToViewport();
+
+	TPlayerState = Cast<ATutorialPlayerState>(PlayerState);
+	CHECK(TPlayerState != nullptr);
+	HUDWidget->BindPlayerState(TPlayerState);
+	TPlayerState->OnPlayerStateChanged.Broadcast();
 }
 
 void ATutorialPlayerController::SetupInputComponent()
@@ -50,6 +59,21 @@ void ATutorialPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(CameraChangeAction, ETriggerEvent::Started, this, &ATutorialPlayerController::ChangeCameraMode);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ATutorialPlayerController::Attack);
 	}
+}
+
+UTutorialHUDWidget* ATutorialPlayerController::GetHUDWidget() const
+{
+	return HUDWidget;
+}
+
+void ATutorialPlayerController::NPCKill(ATutorialCharacter* KilledNPC) const
+{
+	TPlayerState->AddExp(KilledNPC->GetExp());
+}
+
+void ATutorialPlayerController::AddGameScore() const
+{
+	TPlayerState->AddGameScore();
 }
 
 void ATutorialPlayerController::Move(const FInputActionValue& Value)
