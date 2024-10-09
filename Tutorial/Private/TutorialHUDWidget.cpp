@@ -57,7 +57,9 @@ void UTutorialHUDWidget::UpdatePlayerState()
 	CHECK(CurrentPlayerState.IsValid());
 
 	ExpBar->SetPercent(CurrentPlayerState->GetExpRatio());
+	//PlayerState's Method. Not custom
 	PlayerName->SetText(FText::FromString(CurrentPlayerState->GetPlayerName()));
 	PlayerLevel->SetText(FText::FromString(FString::FromInt(CurrentPlayerState->GetCharacterLevel())));
 	CurrentScore->SetText(FText::FromString(FString::FromInt(CurrentPlayerState->GetGameScore())));
+	HighScore->SetText(FText::FromString(FString::FromInt(CurrentPlayerState->GetGameHighScore())));
 }

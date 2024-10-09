@@ -8,6 +8,7 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnHPIsZeroDelegate);
 DECLARE_MULTICAST_DELEGATE(FOnHPChangedDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnLevelUpDelegate);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class TUTORIAL_API UTutorialCharacterStatComponent : public UActorComponent
@@ -33,6 +34,7 @@ public:
 
 	FOnHPIsZeroDelegate OnHPIsZero;
 	FOnHPChangedDelegate OnHPChanged;
+	FOnLevelUpDelegate OnLevelUp;
 
 private:
 	struct FTutorialCharacterData* CurrentStatData;

@@ -84,6 +84,8 @@ public:
 
 	int32 GetExp() const;
 
+	void ResetStat();
+
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
 	TObjectPtr<USpringArmComponent> SpringArm;
 

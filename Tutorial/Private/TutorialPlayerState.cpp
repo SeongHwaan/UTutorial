@@ -3,17 +3,26 @@
 
 #include "TutorialPlayerState.h"
 #include "TutorialGameInstance.h"
+#include "TutorialSaveGame.h"
+#include "Kismet/GameplayStatics.h"
 
 ATutorialPlayerState::ATutorialPlayerState()
 {
 	CharacterLevel = 1;
 	GameScore = 0;
+	GameHighScore = 0;
 	Exp = 0;
+	SaveSlotName = TEXT("Player1");
 }
 
 int32 ATutorialPlayerState::GetGameScore() const
 {
 	return GameScore;
+}
+
+int32 ATutorialPlayerState::GetGameHighScore() const
+{
+	return GameHighScore;
 }
 
 int32 ATutorialPlayerState::GetCharacterLevel() const
@@ -44,24 +53,55 @@ bool ATutorialPlayerState::AddExp(int32 IncomeExp)
 		Exp -= CurrentStatData->NextExp;
 		SetCharacterLevel(CharacterLevel + 1);
 		DidLevelUp = true;
+		OnLevelUp.Broadcast();
 	}
 
 	OnPlayerStateChanged.Broadcast();
+	SavePlayerData();
 	return DidLevelUp;
 }
 
 void ATutorialPlayerState::AddGameScore()
 {
 	GameScore++;
+	if (GameScore > GameHighScore)
+	{
+		GameHighScore = GameScore;
+	}
 	OnPlayerStateChanged.Broadcast();
+	SavePlayerData();
 }
 
 void ATutorialPlayerState::InitPlayerData()
 {
-	SetPlayerName(TEXT("Ness"));
-	SetCharacterLevel(5);
+	auto TSaveGame = Cast<UTutorialSaveGame>(UGameplayStatics::LoadGameFromSlot(SaveSlotName, 0));
+	if (TSaveGame == nullptr)
+	{
+		//New save file
+		TSaveGame = GetMutableDefault<UTutorialSaveGame>();
+	}
+
+	SetPlayerName(TSaveGame->PlayerName);
+	SetCharacterLevel(TSaveGame->Level);
 	GameScore = 0;
-	Exp = 0;
+	GameHighScore = TSaveGame->HighScore;
+	Exp = TSaveGame->Exp;
+
+	SavePlayerData();
+}
+
+void ATutorialPlayerState::SavePlayerData()
+{
+	UTutorialSaveGame* NewPlayerData = NewObject<UTutorialSaveGame>();
+	NewPlayerData->PlayerName = GetPlayerName();
+	NewPlayerData->Level = CharacterLevel;
+	NewPlayerData->Exp = Exp;
+	NewPlayerData->HighScore = GameHighScore;
+
+	if (!UGameplayStatics::SaveGameToSlot(NewPlayerData, SaveSlotName, 0))
+	{
+		LOG(Error, TEXT("SaveGame Error"));
+	}
 }
 
 void ATutorialPlayerState::SetCharacterLevel(int32 NewCharacterLevel)

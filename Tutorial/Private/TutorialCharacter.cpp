@@ -97,6 +97,8 @@ void ATutorialCharacter::SetCharacterState(ECharacterState NewState)
 			//Default Character > CharacterComponent's Level
 			//Player Character  > PlayerState's Level
 			CharacterStat->SetNewLevel(TPlayerState->GetCharacterLevel());
+
+			TPlayerState->OnLevelUp.AddUObject(this, &ATutorialCharacter::ResetStat);
 		}
 
 		SetActorHiddenInGame(true);
@@ -528,6 +530,13 @@ void ATutorialCharacter::OnAssetLoadCompleted()
 int32 ATutorialCharacter::GetExp() const
 {
 	return CharacterStat->GetDropExp();
+}
+
+void ATutorialCharacter::ResetStat()
+{
+	auto TPlayerState = Cast<ATutorialPlayerState>(GetPlayerState());
+	CHECK(TPlayerState != nullptr);
+	CharacterStat->SetNewLevel(TPlayerState->GetCharacterLevel());
 }
 
 bool ATutorialCharacter::CanSetWeapon()
