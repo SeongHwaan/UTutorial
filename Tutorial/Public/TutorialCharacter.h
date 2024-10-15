@@ -83,6 +83,8 @@ public:
 	void OnAssetLoadCompleted();
 
 	int32 GetExp() const;
+	float GetFinalAttackRange() const;
+	float GetFinalAttackDamage() const;
 
 	void ResetStat();
 

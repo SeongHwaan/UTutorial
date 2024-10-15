@@ -8,7 +8,10 @@
 #include "TutorialHUDWidget.h"
 #include "TutorialPlayerState.h"
 #include "TutorialCharacter.h"
-
+#include "TutorialGamePlayWidget.h"
+#include "TutorialResultWidget.h"
+#include "TutorialGameStateBase.h"
+#include "Kismet/GameplayStatics.h"
 
 ATutorialPlayerController::ATutorialPlayerController()
 {
@@ -30,6 +33,9 @@ void ATutorialPlayerController::OnPossess(APawn* aPawn)
 void ATutorialPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	ChangeInputMode(true);
+
 	TCharacter = Cast<ATutorialCharacter>(GetCharacter());
 
 	if (UEnhancedInputLocalPlayerSubsystem* SubSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
@@ -39,12 +45,18 @@ void ATutorialPlayerController::BeginPlay()
 	}
 
 	HUDWidget = CreateWidget<UTutorialHUDWidget>(this, HUDWidgetClass);
+	CHECK(HUDWidget != nullptr);
 	HUDWidget->AddToViewport();
+
+	ResultWidget = CreateWidget<UTutorialResultWidget>(this, ResultWidgetClass);
+	CHECK(ResultWidget != nullptr);
 
 	TPlayerState = Cast<ATutorialPlayerState>(PlayerState);
 	CHECK(TPlayerState != nullptr);
 	HUDWidget->BindPlayerState(TPlayerState);
 	TPlayerState->OnPlayerStateChanged.Broadcast();
+
+	ChangeInputMode(true);
 }
 
 void ATutorialPlayerController::SetupInputComponent()
@@ -58,6 +70,7 @@ void ATutorialPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ATutorialPlayerController::StopJump);
 		EnhancedInputComponent->BindAction(CameraChangeAction, ETriggerEvent::Started, this, &ATutorialPlayerController::ChangeCameraMode);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ATutorialPlayerController::Attack);
+		EnhancedInputComponent->BindAction(PauseAction, ETriggerEvent::Started, this, &ATutorialPlayerController::Pause);
 	}
 }
 
@@ -106,4 +119,39 @@ void ATutorialPlayerController::ChangeCameraMode()
 void ATutorialPlayerController::Attack()
 {
 	TCharacter->Attack();
+}
+
+void ATutorialPlayerController::Pause()
+{
+	MenuWidget = CreateWidget<UTutorialGamePlayWidget>(this, MenuWidgetClass);
+	CHECK(MenuWidget != nullptr);
+	//ZOrder: To put Widget above Game 
+	MenuWidget->AddToViewport(3);
+
+	SetPause(true);
+	ChangeInputMode(false);
+}
+
+void ATutorialPlayerController::ShowResultUI()
+{
+	auto TGameState = Cast<ATutorialGameStateBase>(UGameplayStatics::GetGameState(this));
+	CHECK(TGameState != nullptr);
+	ResultWidget->BindGameState(TGameState);
+
+	ResultWidget->AddToViewport();
+	ChangeInputMode(false);
+}
+
+void ATutorialPlayerController::ChangeInputMode(bool bGameMode)
+{
+	if (bGameMode)
+	{
+		SetInputMode(GameInputMode);
+		bShowMouseCursor = false;
+	}
+	else
+	{
+		SetInputMode(UIInputMode);
+		bShowMouseCursor = true;
+	}
 }

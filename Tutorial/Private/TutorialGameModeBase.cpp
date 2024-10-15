@@ -6,6 +6,7 @@
 #include "TutorialPlayerController.h"
 #include "TutorialGameStateBase.h"
 #include "TutorialPlayerState.h"
+#include "EngineUtils.h"
 
 ATutorialGameModeBase::ATutorialGameModeBase()
 {
@@ -13,6 +14,8 @@ ATutorialGameModeBase::ATutorialGameModeBase()
 	//DefaultPawnClass
 	//PlayerControllerClass
 	//PlayerStateClass
+
+	ScoreToClear = 1;
 }
 
 void ATutorialGameModeBase::PostInitializeComponents()
@@ -52,4 +55,27 @@ void ATutorialGameModeBase::AddScore(ATutorialPlayerController* Player)
 	}
 
 	TGameState->AddGameScore();
+
+	if (GetScore() >= ScoreToClear)
+	{
+		TGameState->SetGameCleared();
+
+		for (TActorIterator<APawn> It(GetWorld()); It; ++It)
+		{
+			(*It)->TurnOff();
+		}
+
+		for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It) {
+			const auto TPlayerController = Cast<ATutorialPlayerController>(It->Get());
+			if (TPlayerController != nullptr)
+			{
+				TPlayerController->ShowResultUI();
+			}
+		}
+	}
+}
+
+int32 ATutorialGameModeBase::GetScore() const
+{
+	return TGameState->GetTotalGameScore();
 }

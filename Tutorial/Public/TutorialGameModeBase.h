@@ -21,9 +21,13 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	void AddScore(class ATutorialPlayerController* Player);
+	int32 GetScore() const;
 
 private:
 	UPROPERTY()
 	TObjectPtr<class ATutorialGameStateBase> TGameState;
+
+	UPROPERTY()
+	int32 ScoreToClear;
 };
 

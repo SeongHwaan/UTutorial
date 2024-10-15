@@ -13,6 +13,7 @@ ATutorialPlayerState::ATutorialPlayerState()
 	GameHighScore = 0;
 	Exp = 0;
 	SaveSlotName = TEXT("Player1");
+	CharacterIndex = 0;
 }
 
 int32 ATutorialPlayerState::GetGameScore() const
@@ -28,6 +29,11 @@ int32 ATutorialPlayerState::GetGameHighScore() const
 int32 ATutorialPlayerState::GetCharacterLevel() const
 {
 	return CharacterLevel;
+}
+
+int32 ATutorialPlayerState::GetCharacterIndex() const
+{
+	return CharacterIndex;
 }
 
 float ATutorialPlayerState::GetExpRatio() const
@@ -86,6 +92,7 @@ void ATutorialPlayerState::InitPlayerData()
 	GameScore = 0;
 	GameHighScore = TSaveGame->HighScore;
 	Exp = TSaveGame->Exp;
+	CharacterIndex = TSaveGame->CharacterIndex;
 
 	SavePlayerData();
 }
@@ -97,6 +104,7 @@ void ATutorialPlayerState::SavePlayerData()
 	NewPlayerData->Level = CharacterLevel;
 	NewPlayerData->Exp = Exp;
 	NewPlayerData->HighScore = GameHighScore;
+	NewPlayerData->CharacterIndex = CharacterIndex;
 
 	if (!UGameplayStatics::SaveGameToSlot(NewPlayerData, SaveSlotName, 0))
 	{

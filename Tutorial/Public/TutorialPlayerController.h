@@ -36,6 +36,18 @@ public:
 	void StopJump();
 	void ChangeCameraMode();
 	void Attack();
+	void Pause();
+	void ShowResultUI();
+
+	void ChangeInputMode(bool bGameMode = true);
+
+protected:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UTutorialGamePlayWidget> MenuWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UTutorialResultWidget> ResultWidgetClass;
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
@@ -56,6 +68,9 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
 	TObjectPtr<class UInputAction> AttackAction;
 
+	UPROPERTY(EditDefaultsOnly, Category = "EnhancedInput")
+	TObjectPtr<class UInputAction> PauseAction;
+
 	UPROPERTY()
 	TObjectPtr<ATutorialCharacter> TCharacter;
 
@@ -64,4 +79,13 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<class ATutorialPlayerState> TPlayerState;
+
+	UPROPERTY()
+	TObjectPtr<class UTutorialGamePlayWidget> MenuWidget;
+
+	UPROPERTY()
+	TObjectPtr<class UTutorialResultWidget> ResultWidget;
+
+	FInputModeGameOnly GameInputMode;
+	FInputModeUIOnly UIInputMode;
 };

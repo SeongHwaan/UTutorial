@@ -17,6 +17,7 @@
 #include "TutorialCharacterSetting.h"
 #include "TutorialPlayerState.h"
 #include "TutorialHUDWidget.h"
+#include "TutorialGameModeBase.h"
 
 // Sets default values
 ATutorialCharacter::ATutorialCharacter()
@@ -35,7 +36,7 @@ ATutorialCharacter::ATutorialCharacter()
 	CurrentCombo = 0;
 	IsAttacking = false;
 
-	AttackRange = 200.0f;
+	AttackRange = 80.0f;
 	AttackRadius = 50.0f;
 
 	WeaponSocket = FName(TEXT("hand_rSocket"));
@@ -100,6 +101,15 @@ void ATutorialCharacter::SetCharacterState(ECharacterState NewState)
 
 			TPlayerState->OnLevelUp.AddUObject(this, &ATutorialCharacter::ResetStat);
 		}
+		else
+		{
+			auto TGameMode = Cast<ATutorialGameModeBase>(GetWorld()->GetAuthGameMode());
+			CHECK(TGameMode != nullptr);
+			int32 TargetLevel = FMath::CeilToInt(((float)TGameMode->GetScore() * 0.8f));
+			int32 FinalLevel = FMath::Clamp<int32>(TargetLevel, 1, 20);
+			LOG(Warning, TEXT("New NPC Level : %d"), FinalLevel);
+			CharacterStat->SetNewLevel(FinalLevel);
+		}
 
 		SetActorHiddenInGame(true);
 		HPBarWidget->SetHiddenInGame(true);
@@ -157,7 +167,7 @@ void ATutorialCharacter::SetCharacterState(ECharacterState NewState)
 
 			if (bIsPlayer)
 			{
-				TPlayerController->RestartLevel();
+				TPlayerController->ShowResultUI();
 			}
 			else
 			{
@@ -185,9 +195,8 @@ void ATutorialCharacter::BeginPlay()
 
 	if (DefaultWeaponClass)
 	{
-		auto SpawnedWeapon = GetWorld()->SpawnActor<ATutorialWeapon>(DefaultWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocket);
-		//Set Skeleton Socket position and rotation instead of Weapon
+		auto DefaultWeapon = GetWorld()->SpawnActor<ATutorialWeapon>(DefaultWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator);
+		SetWeapon(DefaultWeapon);
 	}
 
 	if (bIsPlayer)
@@ -205,7 +214,9 @@ void ATutorialCharacter::BeginPlay()
 	
 	if (bIsPlayer)
 	{
-		AssetIndex = 2;
+		auto TPlayerState = Cast<ATutorialPlayerState>(GetPlayerState());
+		CHECK(TPlayerState != nullptr);
+		AssetIndex = TPlayerState->GetCharacterIndex();
 	}
 	else
 	{
@@ -474,12 +485,14 @@ void ATutorialCharacter::AttackEndComboState()
 
 void ATutorialCharacter::AttackCheck()
 {
+	float FinalAttackRange = GetFinalAttackRange();
+
 	FHitResult HitResult;
 	FCollisionQueryParams Params(NAME_None, false, this);
 	bool bResult = GetWorld()->SweepSingleByChannel(
 		HitResult,
 		GetActorLocation(),
-		GetActorLocation() + GetActorForwardVector() * AttackRange,
+		GetActorLocation() + GetActorForwardVector() * FinalAttackRange,
 		FQuat::Identity,
 		ECollisionChannel::ECC_GameTraceChannel2,
 		FCollisionShape::MakeSphere(AttackRadius),
@@ -487,9 +500,9 @@ void ATutorialCharacter::AttackCheck()
 
 #if ENABLE_DRAW_DEBUG
 
-	FVector TraceVec = GetActorForwardVector() * AttackRange;
+	FVector TraceVec = GetActorForwardVector() * FinalAttackRange;
 	FVector Center = GetActorLocation() + TraceVec * 0.5f;
-	float HalfHeight = AttackRange * 0.5f + AttackRadius;
+	float HalfHeight = FinalAttackRange * 0.5f + AttackRadius;
 	FQuat CapusuleRot = FRotationMatrix::MakeFromZ(TraceVec).ToQuat();
 	FColor DrawColor = bResult ? FColor::Green : FColor::Red;
 	float DebugLifeTime = 5.0f;
@@ -511,7 +524,7 @@ void ATutorialCharacter::AttackCheck()
 			LOG(Warning, TEXT("Hit Actor Name : %s"), *HitResult.GetActor()->GetName());
 
 			FDamageEvent DamageEvent;
-			HitResult.GetActor()->TakeDamage(CharacterStat->GetAttack(), DamageEvent, GetController(), this);
+			HitResult.GetActor()->TakeDamage(GetFinalAttackDamage(), DamageEvent, GetController(), this);
 		}
 	}
 }
@@ -524,12 +537,24 @@ void ATutorialCharacter::OnAssetLoadCompleted()
 
 	GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
 	SetCharacterState(ECharacterState::READY);
-
 }
 
 int32 ATutorialCharacter::GetExp() const
 {
 	return CharacterStat->GetDropExp();
+}
+
+float ATutorialCharacter::GetFinalAttackRange() const
+{
+	return  (CurrentWeapon != nullptr) ? CurrentWeapon->GetAttackRange() : AttackRange;
+}
+
+float ATutorialCharacter::GetFinalAttackDamage() const
+{
+	float AttackDamage = (CurrentWeapon != nullptr) ? (CharacterStat->GetAttack() + CurrentWeapon->GetAttackDamage()) : CharacterStat->GetAttack();
+	float AttackModifier = (CurrentWeapon != nullptr) ? CurrentWeapon->GetAttackModifier() : 1.0f;
+
+	return AttackDamage * AttackModifier;
 }
 
 void ATutorialCharacter::ResetStat()
@@ -541,12 +566,19 @@ void ATutorialCharacter::ResetStat()
 
 bool ATutorialCharacter::CanSetWeapon()
 {
-	return (CurrentWeapon == nullptr);
+	return true;
 }
 
 void ATutorialCharacter::SetWeapon(ATutorialWeapon* NewWeapon)
 {
-	CHECK(NewWeapon != nullptr && CurrentWeapon == nullptr);
+	CHECK(NewWeapon != nullptr);
+
+	if (CurrentWeapon != nullptr)
+	{
+		CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
+	}
 
 	if (NewWeapon != nullptr)
 	{

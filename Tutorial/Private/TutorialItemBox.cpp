@@ -55,6 +55,7 @@ void ATutorialItemBox::OnCharacterOverlap(UPrimitiveComponent* OverlappedComp, A
 	{
 		if (TCharacter->CanSetWeapon())
 		{
+			//Set Skeleton Socket position and rotation instead of Weapon
 			auto NewWeapon = GetWorld()->SpawnActor<ATutorialWeapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
 			TCharacter->SetWeapon(NewWeapon);
 			Effect->Activate(true);
